@@ -1,7 +1,5 @@
 run:
-  tests: false
-  skip-dirs:
-    - _examples
+  tests: true
 
 linters:
   enable:

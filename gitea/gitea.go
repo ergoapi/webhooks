@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 
-	webhook_model "code.gitea.io/gitea/models/webhook"
 	api "code.gitea.io/gitea/modules/structs"
 )
 
@@ -23,6 +22,33 @@ var (
 	ErrEventNotFound               = errors.New("event not defined to be parsed")
 	ErrParsingPayload              = errors.New("error parsing payload")
 	ErrHMACVerificationFailed      = errors.New("HMAC verification failed")
+)
+
+type HookEventType string
+
+// Types of hook events
+const (
+	HookEventCreate                    HookEventType = "create"
+	HookEventDelete                    HookEventType = "delete"
+	HookEventFork                      HookEventType = "fork"
+	HookEventPush                      HookEventType = "push"
+	HookEventIssues                    HookEventType = "issues"
+	HookEventIssueAssign               HookEventType = "issue_assign"
+	HookEventIssueLabel                HookEventType = "issue_label"
+	HookEventIssueMilestone            HookEventType = "issue_milestone"
+	HookEventIssueComment              HookEventType = "issue_comment"
+	HookEventPullRequest               HookEventType = "pull_request"
+	HookEventPullRequestAssign         HookEventType = "pull_request_assign"
+	HookEventPullRequestLabel          HookEventType = "pull_request_label"
+	HookEventPullRequestMilestone      HookEventType = "pull_request_milestone"
+	HookEventPullRequestComment        HookEventType = "pull_request_comment"
+	HookEventPullRequestReviewApproved HookEventType = "pull_request_review_approved"
+	HookEventPullRequestReviewRejected HookEventType = "pull_request_review_rejected"
+	HookEventPullRequestReviewComment  HookEventType = "pull_request_review_comment"
+	HookEventPullRequestSync           HookEventType = "pull_request_sync"
+	HookEventRepository                HookEventType = "repository"
+	HookEventRelease                   HookEventType = "release"
+	HookEventPackage                   HookEventType = "package"
 )
 
 // Option is a configuration option for the webhook
@@ -59,7 +85,7 @@ func New(options ...Option) (*Webhook, error) {
 }
 
 // Parse verifies and parses the events specified and returns the payload object or an error
-func (hook Webhook) Parse(r *http.Request, events ...webhook_model.HookEventType) (interface{}, error) {
+func (hook Webhook) Parse(r *http.Request, events ...HookEventType) (interface{}, error) {
 	defer func() {
 		_, _ = io.Copy(io.Discard, r.Body)
 		_ = r.Body.Close()
@@ -77,7 +103,7 @@ func (hook Webhook) Parse(r *http.Request, events ...webhook_model.HookEventType
 		return nil, ErrMissingGiteaEventHeader
 	}
 
-	giteaEvent := webhook_model.HookEventType(event)
+	giteaEvent := HookEventType(event)
 
 	var found bool
 	for _, evt := range events {
@@ -113,41 +139,41 @@ func (hook Webhook) Parse(r *http.Request, events ...webhook_model.HookEventType
 	// https://github.com/go-gitea/gitea/blob/main/services/webhook/payloader.go
 	// https://github.com/go-gitea/gitea/blob/33fca2b537d36cf998dd27425b2bb8ed5b0965f3/services/webhook/payloader.go#L27
 	switch giteaEvent {
-	case webhook_model.HookEventCreate:
+	case HookEventCreate:
 		var pl api.CreatePayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventDelete:
+	case HookEventDelete:
 		var pl api.DeletePayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventFork:
+	case HookEventFork:
 		var pl api.ForkPayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventPush:
+	case HookEventPush:
 		var pl api.PushPayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventIssues, webhook_model.HookEventIssueAssign, webhook_model.HookEventIssueLabel, webhook_model.HookEventIssueMilestone:
+	case HookEventIssues, HookEventIssueAssign, HookEventIssueLabel, HookEventIssueMilestone:
 		var pl api.IssuePayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventIssueComment:
+	case HookEventIssueComment:
 		var pl api.IssueCommentPayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventPullRequest, webhook_model.HookEventPullRequestAssign, webhook_model.HookEventPullRequestLabel,
-		webhook_model.HookEventPullRequestMilestone, webhook_model.HookEventPullRequestSync, webhook_model.HookEventPullRequestReviewApproved,
-		webhook_model.HookEventPullRequestReviewRejected, webhook_model.HookEventPullRequestReviewComment, webhook_model.HookEventPullRequestComment:
+	case HookEventPullRequest, HookEventPullRequestAssign, HookEventPullRequestLabel,
+		HookEventPullRequestMilestone, HookEventPullRequestSync, HookEventPullRequestReviewApproved,
+		HookEventPullRequestReviewRejected, HookEventPullRequestReviewComment, HookEventPullRequestComment:
 		var pl api.PullRequestPayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventRepository:
+	case HookEventRepository:
 		var pl api.RepositoryPayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
-	case webhook_model.HookEventRelease:
+	case HookEventRelease:
 		var pl api.ReleasePayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
