@@ -46,6 +46,7 @@ const (
 	HookEventPullRequestReviewRejected HookEventType = "pull_request_review_rejected"
 	HookEventPullRequestReviewComment  HookEventType = "pull_request_review_comment"
 	HookEventPullRequestSync           HookEventType = "pull_request_sync"
+	HookEventWiki                      HookEventType = "wiki"
 	HookEventRepository                HookEventType = "repository"
 	HookEventRelease                   HookEventType = "release"
 	HookEventPackage                   HookEventType = "package"
@@ -175,6 +176,10 @@ func (hook Webhook) Parse(r *http.Request, events ...HookEventType) (interface{}
 		return pl, err
 	case HookEventRelease:
 		var pl api.ReleasePayload
+		err = json.Unmarshal([]byte(payload), &pl)
+		return pl, err
+	case HookEventWiki:
+		var pl api.WikiPayload
 		err = json.Unmarshal([]byte(payload), &pl)
 		return pl, err
 	default:
